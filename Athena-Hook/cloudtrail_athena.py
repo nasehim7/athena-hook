@@ -25,16 +25,22 @@ def actor_usage(name, account, tech, index, errors):
         QueryExecutionId=QueryId
     )
 
-    print result
+    results = {}
 
-    """results = {}
-    for event_source in response.aggregations.group_by_eventSource.buckets:
-        for event_name in event_source.group_by_eventName.buckets:
-            event_source_short = event_source.key.split('.amazonaws.com')[0]
-            key = "{es}:{en}".format(es=event_source_short, en=event_name.key)
-            if key in results:
-                results[key] += event_name.doc_count
-            else:
-                results[key] = event_name.doc_count
-
-    return [k for k in results.keys()]"""
+    parent_list = second_query['ResultSet']['Rows']
+    for i in range(len(parent_list)):
+        if i != 0:
+            sub_list = parent_list[i]['Data']
+            principalid_util = sub_list[1]['VarCharValue']
+            start_pos = principalid_util.find(",") + 14
+            end_pos = principalid_util.find(",", start_pos)
+            principalid = principalid_util[start_pos : end_pos]
+            role_from_principalid = principalid[principalid.find(":") + 1 :]
+            if role_from_principalid == role:
+                key_serviceName = sub_list[3]['VarCharValue'][:-14]
+                if key_serviceName not in results:
+                    results[key_serviceName] = []
+                else:
+                    results[key_serviceName].append(sub_list[4]['VarCharValue'])
+    
+    return results         
