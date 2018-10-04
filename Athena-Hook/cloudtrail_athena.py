@@ -7,8 +7,8 @@ import requests
 def actor_usage(name, account, tech, index, errors):
     client = boto3.client('athena')
 
-    # testing to get last 20 days data
-    query = "SELECT * FROM cloudtrail_logs where eventtime > to_iso8601(current_timestamp - interval '20' day) order by cloudtrail_logs.eventtime asc limit 100;"
+    # testing to get last (minimum_age) of services used
+    query = "SELECT useridentity, eventsource, eventname FROM cloudtrail_logs where eventtime < to_iso8601(current_timestamp - interval '" + str(index) + "' day) order by cloudtrail_logs.eventtime asc limit 100;"
     first_query = athena.start_query_execution(
         QueryString = query,
         QueryExecutionContext = {
@@ -25,16 +25,25 @@ def actor_usage(name, account, tech, index, errors):
         QueryExecutionId=QueryId
     )
 
-    print result
+    results = {}
 
-    """results = {}
-    for event_source in response.aggregations.group_by_eventSource.buckets:
-        for event_name in event_source.group_by_eventName.buckets:
-            event_source_short = event_source.key.split('.amazonaws.com')[0]
-            key = "{es}:{en}".format(es=event_source_short, en=event_name.key)
-            if key in results:
-                results[key] += event_name.doc_count
-            else:
-                results[key] = event_name.doc_count
+    parent_list = second_query['ResultSet']['Rows']
+    for i in range(len(parent_list)):
+        if i != 0:
+            sub_list = parent_list[i]['Data']
+            principalid_util = sub_list[0]['VarCharValue']
+            start_pos = principalid_util.find(",") + 14
+            end_pos = principalid_util.find(",", start_pos)
+            principalid = principalid_util[start_pos : end_pos]
+            role_from_principalid = principalid[principalid.find(":") + 1 :]
 
-    return [k for k in results.keys()]"""
+            if role_from_principalid == name:
+                key_serviceName = sub_list[1]['VarCharValue'][:-14]
+                if key_serviceName not in results:
+                    results[key_serviceName] = []
+                    results[key_serviceName].append(sub_list[2]['VarCharValue'])
+                else:
+                    if sub_list[2]['VarCharValue'] not in results[key_serviceName]:
+                        results[key_serviceName].append(sub_list[2]['VarCharValue'])
+    
+    return results         
