@@ -38,11 +38,11 @@ def actor_usage(name, account, tech, index, errors):
             role_from_principalid = principalid[principalid.find(":") + 1 :]
 
             if role_from_principalid == name:
+
                 key_serviceName = sub_list[3]['VarCharValue'][:-14]
                 if key_serviceName not in results:
                     results[key_serviceName] = []
                 else:
                     if sub_list[4]['VarCharValue'] not in results[key_serviceName]:
                         results[key_serviceName].append(sub_list[4]['VarCharValue'])
-    
     return results         
