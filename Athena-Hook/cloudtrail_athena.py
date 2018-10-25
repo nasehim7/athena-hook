@@ -9,7 +9,7 @@ def actor_usage(name, account, tech, index, errors):
     client = boto3.client('athena')
 
     # testing to get last (minimum_age) of services used
-    query = "SELECT useridentity, eventsource, eventname FROM cloudtrail_logs where eventtime < to_iso8601(current_timestamp - interval '" + str(index) + "' day) order by cloudtrail_logs.eventtime asc limit 100;"
+    query = "SELECT useridentity, eventsource, eventname FROM cloudtrail_logs where eventtime < to_iso8601(current_timestamp - interval '" + str(index) + "' day) order by cloudtrail_logs.eventtime;"
     query_id = athena.start_query_execution(
         QueryString = query,
         QueryExecutionContext = {
@@ -53,5 +53,4 @@ def actor_usage(name, account, tech, index, errors):
                 else:
                     if sub_list[3]['VarCharValue'] not in results[key_serviceName]:
                         results[key_serviceName].append(sub_list[4]['VarCharValue'])
-    
     return results         
