@@ -9,7 +9,7 @@ def actor_usage(name, account, tech, index, errors):
     client = boto3.client('athena')
 
     # testing to get last (minimum_age) of services used
-    query = "SELECT useridentity, eventsource, eventname FROM cloudtrail_logs where eventtime < to_iso8601(current_timestamp - interval '" + str(index) + "' day) order by cloudtrail_logs.eventtime;"
+    query = "SELECT useridentity, eventsource, eventname FROM cloudtrail_logs where eventtime > to_iso8601(current_timestamp - interval '" + str(index) + "' day) order by cloudtrail_logs.eventtime;"
     query_id = athena.start_query_execution(
         QueryString = query,
         QueryExecutionContext = {
@@ -34,23 +34,19 @@ def actor_usage(name, account, tech, index, errors):
     results = {}
 
     parent_list = second_query['ResultSet']['Rows']
-    for i in range(len(parent_list)):
-        if i != 0:
-            sub_list = parent_list[i]['Data']
-            principalid_util = sub_list[1]['VarCharValue']
-            start_pos = principalid_util.find(",") + 14
-            end_pos = principalid_util.find(",", start_pos)
-            principalid = principalid_util[start_pos : end_pos]
-            util = principalid.find(":")
-            role_from_principalid = ""
-            if util != -1:
-            	role_from_principalid = principalid[util + 1:]
-            if role_from_principalid == name:
-                key_serviceName = sub_list[3]['VarCharValue'][:-14]
-                if key_serviceName not in results:
-                    results[key_serviceName] = []
-                    results[key_serviceName].append(sub_list[4]['VarCharValue'])
-                else:
-                    if sub_list[3]['VarCharValue'] not in results[key_serviceName]:
-                        results[key_serviceName].append(sub_list[4]['VarCharValue'])
+    for i in parent_list[1:]:
+        sub_list = i['Data']
+        principalid_util = sub_list[1]['VarCharValue']
+        principalid = principalid_util.split(',')[1].split('=')[1].split(':')[0]
+        if principalid not in results:
+        	results[principalid] = {}
+        eventSource = sub_list[3]['VarCharValue']
+        eventName = sub_list[4]['VarCharValue']
+        key_serviceName = eventSource.split('.')[0]
+        if key_serviceName not in results[principalid]:
+            results[principalid][key_serviceName] = []
+            results[principalid][key_serviceName].append(eventName)
+        else:
+            if eventName not in results[principalid][key_serviceName]:
+                results[principalid][key_serviceName].append(eventName)
     return results         
