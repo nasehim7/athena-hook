@@ -5,7 +5,7 @@ import boto3
 import requests
 import time
 
-def actor_usage(name, account, tech, index, errors):
+def actor_usage(name, account, index):
     client = boto3.client('athena')
 
     # testing to get last (minimum_age) of services used

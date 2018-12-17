@@ -70,8 +70,8 @@ def repo_cloud_trail(input_dict):
         return input_dict
 
     try:
-        ct_used_actions = ct_utils.actor_usage(input_dict['role_name'], input_dict['account_number'], 'iamrole',
-                                               INDEXES[:input_dict['minimum_age']], 'anything_but_denied')
+        ct_used_actions = ct_utils.actor_usage(input_dict['role_name'], input_dict['account_number'],
+                                               INDEXES[:input_dict['minimum_age']])
     except Exception as e:
         LOGGER.warning("Unable to retrieve Cloudtrail data for role {}: {}".format(input_dict['role_name'], e))
         return input_dict
